@@ -15,11 +15,12 @@ class _BannerAdPageState extends State<BannerAdPage> {
   bool _isLoaded = false;
   final AdSize adSize = const AdSize(width: 300, height: 50);
   final adUnitId = Platform.isAndroid
-      ? 'ca-app-pub-3940256099942544/6300978111'
+      ? 'ca-app-pub-5873934691119930/2077672575'
       : 'ca-app-pub-3940256099942544/2934735716';
   @override
   void initState() {
     // TODO: implement initState
+    super.initState();
     loadAd();
   }
 

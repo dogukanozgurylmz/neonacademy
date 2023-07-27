@@ -14,18 +14,19 @@ class _AdMobViewState extends State<AdMobView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('AdMob Challenge'),
+        title: const Text('AdMob Challenge'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            InterstitialAdPage(),
-            Text("sdfsdf"),
-          ],
-        ),
+      body: const Stack(
+        children: [
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              InterstitialAdPage(),
+            ],
+          ),
+          BannerAdPage()
+        ],
       ),
-      bottomNavigationBar: const BannerAdPage(),
     );
   }
 }
