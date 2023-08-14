@@ -24,9 +24,9 @@ class _AdMobViewState extends State<AdMobView> {
               InterstitialAdPage(),
             ],
           ),
-          BannerAdPage()
         ],
       ),
+      bottomNavigationBar: const BannerAdPage(),
     );
   }
 }

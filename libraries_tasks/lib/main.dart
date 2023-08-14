@@ -57,7 +57,7 @@ class HomeView extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => HeroView(),
+                    builder: (context) => GameScreen(),
                   ),
                 );
               },
@@ -82,3 +82,4 @@ class HomeView extends StatelessWidget {
     );
   }
 }
+

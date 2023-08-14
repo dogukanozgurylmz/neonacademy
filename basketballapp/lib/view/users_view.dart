@@ -1,7 +1,7 @@
-import 'package:basketballapp/local_datasource/users_datasource.dart';
-import 'package:basketballapp/model/person_model.dart';
-import 'package:basketballapp/services/person_service.dart';
+import 'package:basketballapp/services/post_service.dart';
 import 'package:flutter/material.dart';
+
+import '../model/post_model.dart';
 
 class UsersView extends StatefulWidget {
   const UsersView({super.key});
@@ -11,27 +11,26 @@ class UsersView extends StatefulWidget {
 }
 
 class _UsersViewState extends State<UsersView> {
-  final List<PersonModel> _persons = [];
-  final PersonService _personService = PersonService();
-  final TextEditingController _firstNameContoller = TextEditingController();
-  final TextEditingController _lastNameContoller = TextEditingController();
-  final TextEditingController _emailContoller = TextEditingController();
-  UserDatasource userDatasource = UserDatasource();
-  Future<void> getAllUsers() async {
-    var list = await _personService.getAll();
+  final List<PostModel> _posts = [];
+  final PostService _postService = PostService();
+  final TextEditingController _titleContoller = TextEditingController();
+  final TextEditingController _bodyContoller = TextEditingController();
+
+  Future<void> getAllPosts() async {
+    var list = await _postService.getAll();
     setState(() {
-      _persons.addAll(list);
+      _posts.addAll(list);
     });
   }
 
-  Future<void> createUser(PersonModel model) async {
-    await _personService.create(model);
+  Future<void> createPost(PostModel model) async {
+    await _postService.create(model);
   }
 
   @override
   void initState() {
     super.initState();
-    // getAllUsers();
+    Future.microtask(() async => await getAllPosts());
   }
 
   @override
@@ -53,38 +52,28 @@ class _UsersViewState extends State<UsersView> {
                   child: Column(
                     children: <Widget>[
                       TextField(
-                        controller: _firstNameContoller,
-                        decoration:
-                            const InputDecoration(label: Text("First Name")),
+                        controller: _titleContoller,
+                        decoration: const InputDecoration(label: Text("Title")),
                       ),
                       TextField(
-                        controller: _lastNameContoller,
-                        decoration:
-                            const InputDecoration(label: Text("Last Name")),
-                      ),
-                      TextField(
-                        controller: _emailContoller,
-                        decoration:
-                            const InputDecoration(label: Text("Email Name")),
+                        controller: _bodyContoller,
+                        decoration: const InputDecoration(label: Text("Body")),
                       ),
                       ElevatedButton(
                         onPressed: () async {
                           setState(() {
                             isLoading = true;
                           });
-                          var personModel = PersonModel(
-                            id: '',
-                            title: _firstNameContoller.text,
-                            firstName: _firstNameContoller.text.trim(),
-                            lastName: _lastNameContoller.text.trim(),
-                            email: _emailContoller.text.trim(),
-                            picture: '',
+                          PostModel postModel = PostModel(
+                            id: null,
+                            userId: 1,
+                            title: _titleContoller.text,
+                            body: _bodyContoller.text,
                           );
-                          await createUser(personModel);
+                          await createPost(postModel);
                           setState(() {
-                            _firstNameContoller.clear();
-                            _lastNameContoller.clear();
-                            _emailContoller.clear();
+                            _titleContoller.clear();
+                            _bodyContoller.clear();
                             isLoading = true;
                           });
                         },
@@ -99,17 +88,12 @@ class _UsersViewState extends State<UsersView> {
         },
       ),
       body: ListView.builder(
-        itemCount: _persons.length,
+        itemCount: _posts.length,
         itemBuilder: (context, index) {
-          var person = _persons[index];
+          var post = _posts[index];
           return ListTile(
-            leading: Image.network(
-              person.picture!,
-              width: 50,
-              height: 50,
-              fit: BoxFit.cover,
-            ),
-            title: Text("${person.firstName} ${person.lastName}"),
+            title: Text("${post.title}"),
+            subtitle: Text("${post.body}"),
           );
         },
       ),

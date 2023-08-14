@@ -1,6 +1,5 @@
 import 'package:basketballapp/model/basket_model.dart';
 import 'package:basketballapp/model/product_model.dart';
-import 'package:basketballapp/services/person_service.dart';
 import 'package:basketballapp/services/product_service.dart';
 import 'package:basketballapp/view/users_view.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +20,6 @@ class _HomeViewState extends State<HomeView> {
   final List<ProductModel> _products = [];
   final List<BasketModel> _shopping = [];
   bool isLoading = false;
-  PersonService personService = PersonService();
 
   @override
   void initState() {

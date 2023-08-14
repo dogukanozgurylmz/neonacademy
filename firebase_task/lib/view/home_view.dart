@@ -1,5 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:typed_data';
+
 import 'package:firebase_task/model/comment_model.dart';
 import 'package:firebase_task/model/post_model.dart';
 import 'package:firebase_task/model/user_model.dart';
@@ -9,6 +11,9 @@ import 'package:firebase_task/service/post_service.dart';
 import 'package:firebase_task/service/storage_service.dart';
 import 'package:firebase_task/service/user_service.dart';
 import 'package:flutter/material.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:http/http.dart' as http;
 
 class HomeView extends StatefulWidget {
   const HomeView({Key? key}) : super(key: key);
@@ -42,6 +47,30 @@ class _HomeViewState extends State<HomeView> {
     _storageService.init();
     _commentService.init();
     await getPosts();
+  }
+
+  Future<void> saveImageToGallery(String imageUrl) async {
+    final response = await http.get(Uri.parse(imageUrl));
+    if (response.statusCode == 200) {
+      final Uint8List imageBytes = response.bodyBytes;
+      if (await Permission.storage.request().isGranted) {
+        await ImageGallerySaver.saveImage(imageBytes);
+        // Display a success message to the user
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Image saved to gallery')),
+        );
+      } else {
+        // Display a permission denied message to the user
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Permission denied')),
+        );
+      }
+    } else {
+      // Display an error message to the user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to fetch image')),
+      );
+    }
   }
 
   Future<String> getImage(String id) {
@@ -118,139 +147,148 @@ class _HomeViewState extends State<HomeView> {
                     return Text("Error loading image: ${snapshot.error}");
                   } else {
                     // The image URL is available in snapshot.data
-                    return Container(
-                      width: MediaQuery.of(context).size.width,
-                      height: 300,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.amber,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(30),
-                          topRight: Radius.circular(30),
-                          bottomRight: Radius.circular(30),
+                    return GestureDetector(
+                      onLongPress: () {
+                        saveImageToGallery(
+                            snapshot.data!); // Pass the image URL here
+                      },
+                      child: Container(
+                        width: MediaQuery.of(context).size.width,
+                        height: 300,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.amber,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(30),
+                            topRight: Radius.circular(30),
+                            bottomRight: Radius.circular(30),
+                          ),
+                          image: DecorationImage(
+                            image: NetworkImage(snapshot.data!),
+                            fit: BoxFit.cover,
+                          ),
                         ),
-                        image: DecorationImage(
-                          image: NetworkImage(snapshot.data!),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      child: FutureBuilder<UserModel>(
-                        future: getUserById(post.userId!),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return Container();
-                          } else if (snapshot.hasError) {
-                            return Text("Hata oluştu: ${snapshot.error}");
-                          } else {
-                            final UserModel user = snapshot.data!;
-                            return Row(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Align(
-                                  alignment: Alignment.topLeft,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black54,
-                                      borderRadius: BorderRadius.circular(30),
-                                    ),
-                                    child: GestureDetector(
-                                      onTap: () => throw Exception(),
-                                      child: Text(
-                                        user.username!,
-                                        style: textTheme.bodyLarge!
-                                            .copyWith(color: Colors.white),
+                        child: FutureBuilder<UserModel>(
+                          future: getUserById(post.userId!),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return Container();
+                            } else if (snapshot.hasError) {
+                              return Text("Hata oluştu: ${snapshot.error}");
+                            } else {
+                              final UserModel user = snapshot.data!;
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Align(
+                                    alignment: Alignment.topLeft,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black54,
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                      child: GestureDetector(
+                                        onTap: () => throw Exception(),
+                                        child: Text(
+                                          user.username!,
+                                          style: textTheme.bodyLarge!
+                                              .copyWith(color: Colors.white),
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                GestureDetector(
-                                  onTap: () async {
-                                    await getComments(post.id!);
-                                    showModalBottomSheet<void>(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return StatefulBuilder(
-                                          builder: (context, setState) {
-                                            return Container(
-                                              color: Colors.white,
-                                              child: Center(
-                                                child: Column(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: <Widget>[
-                                                    SizedBox(
-                                                      height:
-                                                          MediaQuery.of(context)
-                                                                  .size
-                                                                  .height *
-                                                              0.5,
-                                                      child: ListView.builder(
-                                                        itemCount:
-                                                            comments.length,
-                                                        itemBuilder:
-                                                            (context, index) {
-                                                          var comment =
-                                                              comments[index];
-                                                          return ListTile(
-                                                            title: Text(comment
-                                                                .commentText!),
-                                                            subtitle: Text(
-                                                                comment
-                                                                    .username!),
-                                                          );
-                                                        },
-                                                      ),
-                                                    ),
-                                                    Row(
-                                                      children: [
-                                                        Expanded(
-                                                          child: TextField(
-                                                            controller:
-                                                                commentController,
-                                                          ),
-                                                        ),
-                                                        IconButton(
-                                                          onPressed: () async {
-                                                            await createComment(
-                                                                post.id!);
-                                                            setState(() {});
+                                  GestureDetector(
+                                    onTap: () async {
+                                      await getComments(post.id!);
+                                      showModalBottomSheet<void>(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return StatefulBuilder(
+                                            builder: (context, setState) {
+                                              return Container(
+                                                color: Colors.white,
+                                                child: Center(
+                                                  child: Column(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: <Widget>[
+                                                      SizedBox(
+                                                        height: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .height *
+                                                            0.5,
+                                                        child: ListView.builder(
+                                                          itemCount:
+                                                              comments.length,
+                                                          itemBuilder:
+                                                              (context, index) {
+                                                            var comment =
+                                                                comments[index];
+                                                            return ListTile(
+                                                              title: Text(comment
+                                                                  .commentText!),
+                                                              subtitle: Text(
+                                                                  comment
+                                                                      .username!),
+                                                            );
                                                           },
-                                                          icon: const Icon(
-                                                              Icons.send),
                                                         ),
-                                                      ],
-                                                    ),
-                                                  ],
+                                                      ),
+                                                      Row(
+                                                        children: [
+                                                          Expanded(
+                                                            child: TextField(
+                                                              controller:
+                                                                  commentController,
+                                                            ),
+                                                          ),
+                                                          IconButton(
+                                                            onPressed:
+                                                                () async {
+                                                              await createComment(
+                                                                  post.id!);
+                                                              setState(() {});
+                                                            },
+                                                            icon: const Icon(
+                                                                Icons.send),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ),
-                                              ),
-                                            );
-                                          },
-                                        );
-                                      },
-                                    );
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black54,
-                                      borderRadius: BorderRadius.circular(30),
-                                    ),
-                                    child: const Icon(
-                                      Icons.comment_outlined,
-                                      color: Colors.white,
+                                              );
+                                            },
+                                          );
+                                        },
+                                      );
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black54,
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                      child: const Icon(
+                                        Icons.comment_outlined,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
-                            );
-                          }
-                        },
+                                ],
+                              );
+                            }
+                          },
+                        ),
                       ),
                     );
                   }
